@@ -2,3 +2,8 @@ node_modules
 coverage
 .vscode
 out
+.
+/src/view/*.html
+/src/view/*.css
+/src/view/*.js
+/src/debug/

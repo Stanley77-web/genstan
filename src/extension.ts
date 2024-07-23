@@ -1,10 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { parserSourceCodeInfo } from './generator/parserSourceCode';
-import { generateTestCase } from './generator/generatorTestCase';
-import { createTestCase } from './generator/createTestCaseFile';
-import { createMockFile } from './generator/createMockFile';
+import { parserSourceCodeInfo } from './generator/preprocessing/parserSourceCode';
+import { generateTestCase } from './generator/generateTestCase/generatorTestCase';
+import { createTestCase } from './generator/preprocessing/createTestCaseFile';
+import { createMockFile } from './generator/preprocessing/createMockFile';
 import { createInputFieldHtml } from './view/inputField';
 import { Options } from './generator/type/generatorTypes';
 

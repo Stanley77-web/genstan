@@ -1,11 +1,11 @@
 
-import { ControllerInfo, RequestInfo, MethodInfo, Options } from "./type/controllerTypes";
-import { MockFunctionArgument, MockArgument, MockInfo } from "./type/mockTypes";
-import { createWriteStream, readFileSync, writeFileSync } from "fs";
+import { ControllerInfo, RequestInfo, MethodInfo, Options } from "../type/controllerTypes";
+import { MockFunctionArgument, MockArgument, MockInfo } from "../type/mockTypes";
+import { createWriteStream, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { parserSourceCodeInfo } from "./parserSourceCode";
 import { trim } from "lodash";
 
-function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, options: Partial<Options> = {}): MockFunctionArgument {
+function createTestCase (listControllerInfo: ControllerInfo[], appDir: string, options: Partial<Options> = {}): MockFunctionArgument {
     const testPath = options.testPath || "src/tests";
     const isWrite = options.isWrite || false;
     const appTestPath = `${appDir}/${testPath}`;
@@ -13,14 +13,16 @@ function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, op
     const mockFunctionArgument: MockFunctionArgument = {};
 
     for (const controllerInfo of listControllerInfo) {
+        // if (controllerInfo.name !== 'ProductController') {
+        //     continue;
+        // }
+
         const mockArgument = writeMockFunction(controllerInfo, appDir, options);
 
         if (isWrite) {
             const testCaseFilePath = `${appTestPath}/${controllerInfo.name}.spec.js`;
 
-            if (controllerInfo.name === 'OrderController') {
-                writeFileSync(testCaseFilePath, controllerInfo.testCaseContent!!);
-            }
+            writeFileSync(testCaseFilePath, controllerInfo.testCaseContent!!);
         }
 
         mockFunctionArgument[controllerInfo.name] = mockArgument;
@@ -32,15 +34,22 @@ function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, op
         const controllerPath = options.controllerPath || "src/controllers";
         const mockPath = options.mockPath || "src/tests/mocks";
 
-        const appMockPath = `${appDir}\\${mockPath}`;
+        const appMockPath = `${appDir}/${mockPath}`;
 
-        const mockFilePath = `${appMockPath}\\${controllerInfo.name}.json`;
+        const mockFilePath = `${appMockPath}/${controllerInfo.name}.json`;
         const mockFile = readFileSync(mockFilePath, 'utf8');
         const mockData: MockInfo[] = JSON.parse(mockFile);
 
-        const mockArgument: MockArgument = {};
+        let mockArgument: MockArgument = {};
 
-        let testCaseString = `import ${controllerInfo.name} from '..${controllerPath.replace('src', '')}/${controllerInfo.name}';\n\n`;
+        let testCaseString = '';
+
+        if (controllerInfo.type === 'Class') {
+            testCaseString += `import ${controllerInfo.name}Class from '..${controllerPath.replace('src', '')}/${controllerInfo.name}';\n\n`;
+            testCaseString += `const ${controllerInfo.name} = new ${controllerInfo.name}Class();\n\n`;
+        } else {
+            testCaseString += `import ${controllerInfo.name} from '..${controllerPath.replace('src', '')}/${controllerInfo.name}';\n\n`;
+        }
 
         for (const library of mockData) {
             const libraryName = library.library;
@@ -95,13 +104,7 @@ function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, op
                     for (const [idxArgument, argument] of inputArgumentName.entries()) {
                         const argumentValue = methodInput[idx][argument];
 
-                        if (!mockArgument.hasOwnProperty(argument)) {
-                            mockArgument[argument] = [];
-                        }
-
-                        if (!isIncluding(mockArgument[argument], argumentValue)) {
-                            mockArgument[argument].push(argumentValue);
-                        }
+                        mockArgument = extractMock(mockArgument, argument, argumentValue);
 
                         testCaseString += writeConditionValue(argument, argumentValue);
 
@@ -114,13 +117,7 @@ function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, op
                         const outputValue = Object.values(methodReturn[idx])[0];
                         const outputName = Object.keys(methodReturn[idx])[0];
 
-                        if (!mockArgument.hasOwnProperty(outputName)) {
-                            mockArgument[outputName] = [];
-                        }
-
-                        if (!isIncluding(mockArgument[outputName], outputValue)) {
-                            mockArgument[outputName].push(outputValue);
-                        }
+                        mockArgument = extractMock(mockArgument, outputName, outputValue);
                         
                         testCaseString += `) return `;
                         testCaseString += writeReturnValue(outputValue);
@@ -136,19 +133,14 @@ function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, op
                     const outputValue = Object.values(methodReturn[idx])[0];
                     const outputName = Object.keys(methodReturn[idx])[0];
 
-                    if (!mockArgument.hasOwnProperty(outputName)) {
-                        mockArgument[outputName] = [];
-                    }
-
-                    if (!isIncluding(mockArgument[outputName], outputValue)) {
-                        mockArgument[outputName].push(outputValue);
-                    }
+                    mockArgument = extractMock(mockArgument, outputName, outputValue);
 
                     testCaseString += `        if (true) return `;
                     testCaseString += writeReturnValue(outputValue);
                     testCaseString += '\n';
                 }
 
+                testCaseString += '        return null\n';
                 testCaseString += `      })`;
 
                 if (idxMethod < methods.length - 1) {
@@ -172,24 +164,6 @@ function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, op
         controllerInfo.testCaseContent = testCaseString;
 
         return mockArgument;
-
-        function isIncluding(array: any[], value: any): boolean {
-            for (const element of array) {
-                if (typeof element === typeof value) {
-                    if (typeof element === 'object') {
-                        if (JSON.stringify(element) === JSON.stringify(value)) {
-                            return true;
-                        }
-                    } else {
-                        if (element === value) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
     }
 
     function writeConditionValue(argumentName: string, argumentValue: any): string {
@@ -257,10 +231,55 @@ function createTestCase(listControllerInfo: ControllerInfo[], appDir: string, op
 
         return returnValueStr;
     }
+
+    function extractMock (mockArgument: MockArgument, argument: string, argumentValue: any): MockArgument {
+
+        if (!mockArgument.hasOwnProperty(argument)) {
+            mockArgument[argument] = [];
+        }
+
+        if (!isIncluding(mockArgument[argument], argumentValue)) {
+            mockArgument[argument].push(argumentValue);
+        }
+
+        if ("object" === typeof argumentValue && argumentValue.length !== undefined) {
+            for (const listValue of argumentValue) {
+                if ("object" === typeof listValue) {
+                    for (const key of Object.keys(listValue)) {
+                        mockArgument = extractMock(mockArgument, key, listValue[key]);
+                    }
+                }
+            }
+        } else if ("object" === typeof argumentValue) {
+            for (const key of Object.keys(argumentValue)) {
+                mockArgument = extractMock(mockArgument, key, argumentValue[key]);
+            }
+        }
+
+        return mockArgument;
+
+        function isIncluding(array: any[], value: any): boolean {
+            for (const element of array) {
+                if (typeof element === typeof value) {
+                    if (typeof element === 'object') {
+                        if (JSON.stringify(element) === JSON.stringify(value)) {
+                            return true;
+                        }
+                    } else {
+                        if (element === value) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
 }
 
-function removeTestCaseScenario(controllerInfo: ControllerInfo, testPath: string): void {
-  const testCaseFilePath = `${testPath}\\${controllerInfo.name}.spec.js`;
+function removeTestCaseScenario (controllerInfo: ControllerInfo, testPath: string): void {
+  const testCaseFilePath = `${testPath}/${controllerInfo.name}.spec.js`;
   const testCaseFileRead = readFileSync(testCaseFilePath, "utf-8").split(/\r?\n/);
 
   const mockLines: string[] = [];
@@ -284,8 +303,25 @@ function removeTestCaseScenario(controllerInfo: ControllerInfo, testPath: string
   testCaseFileWrite.end();
 }
 
-function createTestCaseScenario(controllerInfo: ControllerInfo): string {
-  let testCaseScenarioString = `describe('# ${controllerInfo.name}', () => {\n`;
+function createTestCaseScenario (controllerInfo: ControllerInfo, writingRequest: Partial<{ check: boolean, write: boolean, testPath: string }> = {}): string {
+  const writeRequestCheck = writingRequest['check'] || false;
+  const writeRequestWrite = writingRequest['write'] || false;
+  const testPath = writingRequest['testPath'] || "src/tests";
+
+  let testCaseScenarioString = '';
+
+  if (writeRequestCheck) {
+    testCaseScenarioString += `import { writeFileSync } from 'fs'\n`;
+    testCaseScenarioString += `const output = {}\n\n`;
+  }
+
+  const outputValue = writeRequestWrite ? require(`${testPath}/${controllerInfo.name}.output.json`) : {};
+
+  if (writeRequestWrite) {
+    unlinkSync(`${testPath}/${controllerInfo.name}.output.json`);
+  }
+
+  testCaseScenarioString +=  `describe('# ${controllerInfo.name}', () => {\n`;
 
   for (const method of controllerInfo.methods) {
     testCaseScenarioString += `    describe('## ${method.name} method', () => {\n`;
@@ -302,6 +338,16 @@ function createTestCaseScenario(controllerInfo: ControllerInfo): string {
       testCaseScenarioString += writeResponse(method);
 
       testCaseScenarioString += `            await ${controllerInfo.name}.${method.name}(request, response)\n`;
+      if (writeRequestCheck) {
+        testCaseScenarioString += `            output['${method.name}-Scenario 1'] = ret\n`;
+
+        if (method === controllerInfo.methods[controllerInfo.methods.length - 1]) {
+            testCaseScenarioString += `            writeFileSync('${testPath}/${controllerInfo.name}.output.json', JSON.stringify(output, null, 2))\n`;
+        }
+      } else if (writeRequestWrite) {
+        const value = outputValue[`${method.name}-Scenario 1`];
+        testCaseScenarioString += `            expect(ret).toEqual(${JSON.stringify(value)})\n`;
+      }
       testCaseScenarioString += `        })\n`;
     } else {
       const lenScenario = reqInfos[0].propertiesValue?.length || 0;
@@ -316,6 +362,16 @@ function createTestCaseScenario(controllerInfo: ControllerInfo): string {
         testCaseScenarioString += writeResponse(method);
 
         testCaseScenarioString += `            await ${controllerInfo.name}.${method.name}(request, response)\n`;
+        if (writeRequestCheck) {
+          testCaseScenarioString += `            output['${method.name}-Scenario ${idx + 1}'] = ret\n`;
+
+          if (method === controllerInfo.methods[controllerInfo.methods.length - 1] && idx === lenScenario - 1) {
+            testCaseScenarioString += `            writeFileSync('${testPath}/${controllerInfo.name}.output.json', JSON.stringify(output, null, 2))\n`;
+          }
+        } else if (writeRequestWrite) {
+            const value = outputValue[`${method.name}-Scenario ${idx + 1}`];
+            testCaseScenarioString += `            expect(ret).toEqual(${JSON.stringify(value)})\n`;
+        }
         testCaseScenarioString += `        })\n`;
       }
     }
@@ -433,7 +489,7 @@ function createTestCaseScenario(controllerInfo: ControllerInfo): string {
   }
 }
 
-function writeTestCaseFile(controllerName: string, appDir: string, testCaseContent: string, options: Partial<Options> = {}): void {
+function writeTestCaseFile (controllerName: string, appDir: string, testCaseContent: string, options: Partial<Options> = {}): void {
     const testPath = options.testPath || "src/tests";
     const appTestPath = `${appDir}/${testPath}/${controllerName}.spec.js`;
 

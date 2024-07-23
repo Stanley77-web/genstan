@@ -29,6 +29,7 @@ type ControllerInfo = {
     imports: ImportInfo[],
     methods: MethodInfo[],
     callLibs: CallInfo[],
+    type: string,
     testCaseContent?: string
 };
 

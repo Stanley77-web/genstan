@@ -25,9 +25,12 @@ import {
     Node,
     isBlock,
     isAsExpression,
-    isConditionalExpression
+    isConditionalExpression,
+    isClassDeclaration,
+    isMethodDeclaration
 } from 'typescript';
-import { ControllerInfo, ImportInfo, MethodInfo, RequestInfo, CallInfo } from './type/controllerTypes';
+import { ControllerInfo, ImportInfo, MethodInfo, RequestInfo, CallInfo } from '../type/controllerTypes';
+import { trim } from "lodash";
 
 function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/controllers'): ControllerInfo[] {
     const path = `${appDir}\\${controllerPath}`;
@@ -38,10 +41,15 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
     for (let file of controllerFiles) { 
         const info = {
             name: file.split('.')[0],
+            type: '',
             imports: [] as ImportInfo[],
             methods: [] as MethodInfo[],
             callLibs: [] as CallInfo[]
         };
+
+        // if (file !== 'ProductController.ts') {
+        //     continue;
+        // }
     
         const involvedLibraries = [] as string[];
     
@@ -79,7 +87,7 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
     
                 info.imports.push({
                     library,
-                    module: statement.moduleSpecifier.getText(),
+                    module: trim(trim(statement.moduleSpecifier.getText(), '"'), "\""),
                     type
                 });
             } else if (isImportEqualsDeclaration(statement)) {
@@ -87,7 +95,7 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
     
                 info.imports.push({
                     library: [statement.name.getText()],
-                    module: statement.moduleReference.getText(),
+                    module: trim(trim(statement.moduleReference.getText(), '"'), "\""),
                     type: 'identifierImport'
                 });
             } else if (isVariableStatement(statement) || isExpressionStatement(statement)) {
@@ -114,7 +122,7 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
                         if (initializer.expression.getText() === 'require') {
                             info.imports.push({
                                 library: [name.getText()],
-                                module: initializer.arguments[0].getText(),
+                                module: trim(trim(initializer.arguments[0].getText(), '"'), "\""),
                                 type: 'identifierImport'
                             });
                         }
@@ -144,6 +152,8 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
     
                 function objectLiteralParse(initializer: Expression) {
                     if (isObjectLiteralExpression(initializer)) {
+                        info.type = 'Object';
+
                         initializer.properties.forEach((property) => {
                             // Controller Property (ex: createUser: "createUser")
                             property.forEachChild((child) => {
@@ -153,6 +163,12 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
                         });
                     }
                 }
+            } else if (isClassDeclaration(statement)) {
+                info.type = 'Class';
+
+                statement.members.forEach((member) => {
+                    methodParser(member);
+                });
             }
         }
         
@@ -181,7 +197,38 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
                         blockParser(finallyStatements!!, methodInfo);
                     }
                 });
+
+                if (isBlock(statement.body!!)) {
+                    blockParser(statement.body.statements, methodInfo);
+                }
     
+                info.methods.push(methodInfo);
+            } else if (isMethodDeclaration(statement)) {
+                const methodInfo = {
+                    name: statement.name.getText(),
+                    parameters: statement.parameters.map((parameter) => parameter.name.getText()),
+                    reqInfo: [] as RequestInfo[],
+                    resInfo: [] as RequestInfo[][]
+                };
+
+                // console.log(statement.body?.getText());
+
+                // Function Block (ex: login: async (req: Request, res: Response) => {})
+                statement.body?.forEachChild((functionBlock) => {
+                    // Try Statement (ex: try {})
+                    if (isTryStatement(functionBlock)) {
+                        const tryStatements = functionBlock.tryBlock.statements;
+                        const catchStatements = functionBlock.catchClause?.block.statements;
+                        const finallyStatements = functionBlock.finallyBlock?.statements;
+    
+                        blockParser(tryStatements, methodInfo);
+                        blockParser(catchStatements!!, methodInfo);
+                        blockParser(finallyStatements!!, methodInfo);
+                    }
+                });
+
+                blockParser(statement.body!!.statements, methodInfo);
+
                 info.methods.push(methodInfo);
             }
         }
@@ -210,19 +257,25 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
     
         function callLibraryParse (statement: Node) {
             if (isVariableStatement(statement) || isExpressionStatement(statement)) {
+                
                 if (isVariableStatement(statement)) {
+                    
                     statement.declarationList.declarations.forEach((declaration) => {
                         const declarartionInitializer = declaration.initializer;
     
                         awaitParse(declarartionInitializer!!);
+                        expressionParse(declarartionInitializer!!);
                     });
                 } else {
+                    // console.log(statement.getText());
                     if (isBinaryExpression(statement.expression)) {
                         const declarartionInitializer = statement.expression.right;
     
                         awaitParse(declarartionInitializer);
+                        expressionParse(declarartionInitializer);
                     } else if (isAwaitExpression(statement.expression)) {
                         awaitParse(statement.expression);
+                        expressionParse(statement.expression);
                     }
 
                     expressionParse(statement.expression);
@@ -242,6 +295,8 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
 
             function expressionParse (expression: Expression) {
                 if (isCallExpression(expression)) {
+                    // console.log(expression.getText());
+                    // console.log(expression.kind);
                     callParse(expression);
                 } 
             }
@@ -408,20 +463,6 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
                         }
                     }
                 }
-
-                function rekursifReqInfoParse (initializer: String[]): RequestInfo {
-                    if (initializer.length === 2) {
-                        return {
-                            name: initializer[0],
-                            properties: [initializer[1]]
-                        } as RequestInfo;
-                    } else {
-                        return {
-                            name: initializer[0],
-                            properties: [rekursifReqInfoParse(initializer.slice(1))]
-                        } as RequestInfo;
-                    }
-                }
             }
         }
     
@@ -504,5 +545,11 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
     return controllersInfo;
 };
 
+// const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\src\\Open Source Web\\Test Case Generator\\supply_chain_application";
+const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\Test";
+
+const controllerInfoList = parserSourceCodeInfo(appDir);
+
+// console.log(JSON.stringify(controllerInfoList, null, 2));
 
 export { parserSourceCodeInfo };

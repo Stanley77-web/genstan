@@ -34,11 +34,16 @@ type Options = {
     isPhoneNumber: boolean;
 };
 
+type InputParam = {
+    [key: string]: string
+};
+
 export type {
     MockMethod,
     MockInfo,
     MockArgument,
     MockFunctionArgument,
     ValueType,
-    Options
+    Options,
+    InputParam
 };

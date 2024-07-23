@@ -47,8 +47,7 @@ type CoverageValue = {
 type Coverage = {
     statements: number,
     branches: number,
-    functions: number,
-    lines: number
+    functions: number
 };
 
 type FullfilledMember = {

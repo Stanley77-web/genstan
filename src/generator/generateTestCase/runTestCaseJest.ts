@@ -1,5 +1,5 @@
 import { runCLI } from "jest";
-import { Options, CoverageInfo } from "./type/generatorTypes";
+import { Options, CoverageInfo } from "../type/generatorTypes";
 import { FileCoverage } from "istanbul-lib-coverage";
 
 async function runTest(options: Options): Promise<CoverageInfo> {
@@ -11,6 +11,11 @@ async function runTest(options: Options): Promise<CoverageInfo> {
         coverage: true,
         silent: true,
         testPathIgnorePatterns: skipController.map((controller) => `${testPath}\\${controller}`),
+        preset: 'ts-jest',
+        transform: {
+          '^.+\\.(ts|tsx)?$': 'ts-jest',
+          '^.+\\.(js|jsx)$': 'babel-jest',
+        }
     };
 
     const result = await runCLI(optionTest, [appDir]);
@@ -28,8 +33,7 @@ async function runTest(options: Options): Promise<CoverageInfo> {
             coverage: {
                 statements: coverageSummary.statements.pct,
                 branches: coverageSummary.branches.pct,
-                functions: coverageSummary.functions.pct,
-                lines: coverageSummary.lines.pct,
+                functions: coverageSummary.functions.pct
             },
             unCoveredLines: coverageResult.getUncoveredLines(),
         };
@@ -38,15 +42,20 @@ async function runTest(options: Options): Promise<CoverageInfo> {
     return coverageInfo;
 }
 
-// const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\src\\Open Source Web\\Test Case Generator\\supply_chain_application";
-// const options: Options = {
-//     populationSize: 10,
-//     maxIteration: 10,
-//     qLearningInterval: 3,
-//     targetCoverage: 80,
-//     appDir: appDir,
-//     testPath: `${appDir}\\src\\tests\\`,
-//     skipController: [],
-// };
+const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\src\\Open Source Web\\Test Case Generator\\supply_chain_application";
+const options: Options = {
+    populationSize: 10,
+    maxIteration: 10,
+    qLearningInterval: 3,
+    targetCoverage: 80,
+    appDir: appDir,
+    testPath: `${appDir}\\src\\tests\\`,
+    skipController: [],
+};
+
+// runTest(options).then((result) => {
+//     console.log(result);
+// });
+
 
 export { runTest };
