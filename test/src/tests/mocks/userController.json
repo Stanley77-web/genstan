@@ -1,0 +1,102 @@
+[
+  {
+    "library": "UserService",
+    "path": "../services/userServices",
+    "methods": [
+      {
+        "name": "create",
+        "isAsync": true,
+        "input": [
+          { "userObj": { "id": "'uid-1'", "email": "'test-1@gmail.com'", "password": "'password-1'", "name": "'user-1'" } },
+          { "userObj": { "id": "'uid-2'", "email": "'test-2@gmail.com'", "password": "'password-2'", "name": "'user-2'" } },
+          { "userObj": { "id": "'uid-3'", "email": "'test-3@gmail.com'", "password": "'password-3'", "name": "'user-3'" } },
+          { "userObj": { "id": "'uid-4'", "email": "'test-4@gmail.com'", "password": "'password-4'", "name": "'user-4'" } },
+          { "userObj": { "id": "'uid-5'", "email": "'test-5@gmail.com'", "password": "'password-5'", "name": "'user-5'" } },
+          { "userObj": { "id": "'uid-6'", "email": "'test-6@gmail.com'", "password": "'password-6'", "name": "'user-6'" } },
+          { "userObj": { "id": "'uid-7'", "email": "'test-7@gmail.com'", "password": "'password-7'", "name": "'user-7'" } },
+          { "userObj": { "id": "'uid-8'", "email": "'test-8@gmail.com'", "password": "'password-8'", "name": "'user-8'" } },
+          { "userObj": { "id": "'uid-9'", "email": "'test-9@gmail.com'", "password": "'password-9'", "name": "'user-9'" } },
+          { "userObj": { "id": "'uid-10'", "email": "'test-10@gmail.com'", "password": "'password-10'", "name": "'user-10'" } }
+        ],
+        "return": [
+          { "userObj": { "id": "'uid-1'", "email": "'test-1@gmail.com'", "password": "'password-1'", "name": "'user-1'" } },
+          { "userObj": { "id": "'uid-2'", "email": "'test-2@gmail.com'", "password": "'password-2'", "name": "'user-2'" } },
+          { "userObj": { "id": "'uid-3'", "email": "'test-3@gmail.com'", "password": "'password-3'", "name": "'user-3'" } },
+          { "userObj": { "id": "'uid-4'", "email": "'test-4@gmail.com'", "password": "'password-4'", "name": "'user-4'" } },
+          { "userObj": { "id": "'uid-5'", "email": "'test-5@gmail.com'", "password": "'password-5'", "name": "'user-5'" } },
+          { "userObj": { "id": "'uid-6'", "email": "'test-6@gmail.com'", "password": "'password-6'", "name": "'user-6'" } },
+          { "userObj": { "id": "'uid-7'", "email": "'test-7@gmail.com'", "password": "'password-7'", "name": "'user-7'" } },
+          { "userObj": { "id": "'uid-8'", "email": "'test-8@gmail.com'", "password": "'password-8'", "name": "'user-8'" } },
+          { "userObj": { "id": "'uid-9'", "email": "'test-9@gmail.com'", "password": "'password-9'", "name": "'user-9'" } },
+          { "userObj": { "id": "'uid-10'", "email": "'test-10@gmail.com'", "password": "'password-10'", "name": "'user-10'" } }
+        ]
+      },
+      {
+        "name": "list",
+        "isAsync": true,
+        "input": [
+        ],
+        "return": [
+          { "userList": [ { "id": "'uid-1'", "email": "'test-1@gmail.com'", "password": "'password-1'", "name": "'user-1'" }, { "id": "'uid-2'", "email": "'test-2@gmail.com'", "password": "'password-2'", "name": "'user-2'" }  ] }
+        ]
+      },
+      {
+        "name": "findById",
+        "isAsync": true,
+        "input": [
+          { "id": "'uid-1'" },
+          { "id": "'uid-2'" },
+          { "id": "'uid-3'" },
+          { "id": "'uid-4'" },
+          { "id": "'uid-5'" },
+          { "id": "'uid-11'" },
+          { "id": "'uid-12'" },
+          { "id": "'uid-13'" },
+          { "id": "'uid-14'" },
+          { "id": "'uid-15'" }
+        ],
+        "return": [
+          { "userObj": { "id": "'uid-1'", "email": "'test-1@gmail.com'", "password": "'password-1'", "name": "'user-1'" } },
+          { "userObj": { "id": "'uid-2'", "email": "'test-2@gmail.com'", "password": "'password-2'", "name": "'user-2'" } },
+          { "userObj": { "id": "'uid-3'", "email": "'test-3@gmail.com'", "password": "'password-3'", "name": "'user-3'" } },
+          { "userObj": { "id": "'uid-4'", "email": "'test-4@gmail.com'", "password": "'password-4'", "name": "'user-4'" } },
+          { "userObj": { "id": "'uid-5'", "email": "'test-5@gmail.com'", "password": "'password-5'", "name": "'user-5'" } },
+          { "userObj": { "id": "'uid-11'", "email": "'test-6@gmail.com'", "password": "'password-6'", "name": "'user-6'" } },
+          { "userObj": { "id": "'uid-12'", "email": "'test-7@gmail.com'", "password": "'password-7'", "name": "'user-7'" } },
+          { "userObj": { "id": "'uid-13'", "email": "'test-8@gmail.com'", "password": "'password-8'", "name": "'user-8'" } },
+          { "userObj": { "id": "'uid-14'", "email": "'test-9@gmail.com'", "password": "'password-9'", "name": "'user-9'" } },
+          { "userObj": { "id": "'uid-15'", "email": "'test-10@gmail.com'", "password": "'password-10'", "name": "'user-10'" } }
+        ]
+      },
+      {
+        "name": "findUserAccount",
+        "isAsync": true,
+        "input": [
+          { "email": "'test-1@gmail.com'", "password": "'password-1'" },
+          { "email": "'test-2@gmail.com'", "password": "'password-2'" },
+          { "email": "'test-3@gmail.com'", "password": "'password-3'" },
+          { "email": "'test-4@gmail.com'", "password": "'password-4'" },
+          { "email": "'test-5@gmail.com'", "password": "'password-5'" },
+          { "email": "'test-6@gmail.com'", "password": "'password-6'" },
+          { "email": "'test-7@gmail.com'", "password": "'password-7'" },
+          { "email": "'test-8@gmail.com'", "password": "'password-8'" },
+          { "email": "'test-9@gmail.com'", "password": "'password-9'" },
+          { "email": "'test-10@gmail.com'", "password": "'password-10'" }
+        ],
+        "return": [
+          { "userObj": { "id": "'uid-1'", "email": "'test-1@gmail.com'", "password": "'password-1'", "name": "'user-1'" } },
+          { "userObj": { "id": "'uid-2'", "email": "'test-2@gmail.com'", "password": "'password-2'", "name": "'user-2'" } },
+          { "userObj": { "id": "'uid-3'", "email": "'test-3@gmail.com'", "password": "'password-3'", "name": "'user-3'" } },
+          { "userObj": { "id": "'uid-4'", "email": "'test-4@gmail.com'", "password": "'password-4'", "name": "'user-4'" } },
+          { "userObj": { "id": "'uid-5'", "email": "'test-5@gmail.com'", "password": "'password-5'", "name": "'user-5'" } },
+          { "userObj": { "id": "'uid-6'", "email": "'test-6@gmail.com'", "password": "'password-6'", "name": "'user-6'" } },
+          { "userObj": { "id": "'uid-7'", "email": "'test-7@gmail.com'", "password": "'password-7'", "name": "'user-7'" } },
+          { "userObj": { "id": "'uid-8'", "email": "'test-8@gmail.com'", "password": "'password-8'", "name": "'user-8'" } },
+          { "userObj": { "id": "'uid-9'", "email": "'test-9@gmail.com'", "password": "'password-9'", "name": "'user-9'" } },
+          { "userObj": { "id": "'uid-10'", "email": "'test-10@gmail.com'", "password": "'password-10'", "name": "'user-10'" } }
+        ]
+      }
+    ],
+    "typeImport": "identifierImport"
+  }
+]
