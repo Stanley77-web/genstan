@@ -34,12 +34,12 @@ function createInputFieldHtml() {
         
           <div class="nice-form-group">
             <label class="label-input">Test Path</label>
-            <input id="test-path" class="input-value" type="email" name="optional-input" placeholder="src/tests/" value="" />
+            <input id="test-path" class="input-value" type="email" name="optional-input" placeholder="src/tests" value="" />
           </div>
         
           <div class="nice-form-group">
             <label class="label-input">Controller Path</label>
-            <input id="controller-path" class="input-value" type="email" name="optional-input" placeholder="src/controller/" value="" />
+            <input id="controller-path" class="input-value" type="email" name="optional-input" placeholder="src/controllers" value="" />
           </div>
 
           <div class="nice-form-group" id="population-size-box">
