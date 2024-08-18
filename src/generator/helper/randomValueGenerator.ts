@@ -1,5 +1,5 @@
 import { ValueType, Options } from '../type/mockTypes';
-import { wordList } from '../words/wordList';
+import { wordList } from './words/wordList';
 
 function randomValue(value: ValueType = { type: 'null' }, options: Partial<Options> = {}): any {
     const alphabet = 'abcdefghijklmnopqrstuvwxyz';

@@ -34,6 +34,7 @@ type ControllerInfo = {
 };
 
 type Options = {
+    appDir: string,
     testPath: string,
     controllerPath: string,
     mockPath: string,

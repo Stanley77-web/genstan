@@ -2,7 +2,7 @@ import { ControllerInfo, RequestInfo } from "../type/controllerTypes";
 import { MockFunctionArgument, MockArgument } from "../type/mockTypes";
 import { Options, Population, Method, Individu, Gen, CoverageInfo, Coverage, FullfilledMember, BestIndividu, QTable, Action, OptimizedIndividu, StateList, CoverageValue, DuplicateRequestInfo } from "../type/generatorTypes";
 import { cloneDeep, sample } from 'lodash';
-import { randomValue } from "./randomValueGenerator";
+import { randomValue } from "../helper/randomValueGenerator";
 import { runTest } from "./runTestCaseJest";
 import { createTestCase, createTestCaseScenario, removeTestCaseScenario, writeTestCaseFile } from "../preprocessing/createTestCaseFile";
 import { parserSourceCodeInfo } from "../preprocessing/parserSourceCode";
@@ -133,13 +133,13 @@ function addTestCaseScenario (controllerInfo: ControllerInfo, individu: Individu
   const writeRequestOption = {
     check: writeRequest === 'check',
     write: writeRequest === 'write',
-    testPath: `${testPath}`,
+    appTestPath: `${appDir}/${testPath}`,
   };
 
   const testCaseScenarioContent = createTestCaseScenario(controllerInfo, writeRequestOption);
   const testCaseFileContent = controllerInfo.testCaseContent!! + testCaseScenarioContent;
 
-  writeTestCaseFile(controllerInfo.name, appDir, testCaseFileContent);
+  writeTestCaseFile(controllerInfo.name, testCaseFileContent, options);
 }
 
 function maxFitness (coverageInfoList: CoverageInfo[]): CoverageInfo {
@@ -1007,13 +1007,83 @@ function geneticProcess (controllerPopulation: Population[], listCoverageInfo: C
 };
 
 async function generateTestCase(listControllerInfo: ControllerInfo[], mockFunctionArgument: MockFunctionArgument, options: Partial<Options> = {}): Promise<void> {
+  if (!existsSync(mockDebugDir)) {
+    mkdirSync(mockDebugDir, { recursive: true });
+  }
+  
+  // writeFileSync(`${mockDebugDir}\\mock.json`, JSON.stringify(mockFunctionArgument, null, 2));
+  
+  if (!existsSync(populationDebugDir)) {
+    mkdirSync(populationDebugDir, { recursive: true });
+  }
+  
+  if (!existsSync(coverageDebugDir)) {
+    mkdirSync(coverageDebugDir, { recursive: true });
+  }
+  
+  if (!existsSync(coverageInfoDebugDir)) {
+    mkdirSync(coverageInfoDebugDir, { recursive: true });
+  }
+  
+  if (!existsSync(maxCoverageDebugDir)) {
+    mkdirSync(maxCoverageDebugDir, { recursive: true });
+  }
+  
+  if (!existsSync(bestIndividuDebugDir)) {
+    mkdirSync(bestIndividuDebugDir, { recursive: true });
+  }
+  
+  if (!existsSync(qTableDebugDir)) {
+    mkdirSync(qTableDebugDir, { recursive: true });
+  }
+  
+  if (!existsSync(improvedIndividuDebugDir)) {
+    mkdirSync(improvedIndividuDebugDir, { recursive: true });
+  }
+  
+  if (!existsSync(swapDebugDir)) {
+    mkdirSync(swapDebugDir, { recursive: true });
+  }
+  
+  for (const files of readdirSync(coverageDebugDir)) {
+    unlinkSync(`${coverageDebugDir}\\${files}`);
+  }
+  
+  for (const files of readdirSync(coverageInfoDebugDir)) {
+    unlinkSync(`${coverageInfoDebugDir}\\${files}`);
+  }
+  
+  for (const files of readdirSync(maxCoverageDebugDir)) {
+    unlinkSync(`${maxCoverageDebugDir}\\${files}`);
+  }
+  
+  for (const files of readdirSync(populationDebugDir)) {
+    unlinkSync(`${populationDebugDir}\\${files}`);
+  }
+  
+  for (const files of readdirSync(bestIndividuDebugDir)) {
+    unlinkSync(`${bestIndividuDebugDir}\\${files}`);
+  }
+  
+  for (const files of readdirSync(qTableDebugDir)) {
+    unlinkSync(`${qTableDebugDir}\\${files}`);
+  }
+  
+  for (const files of readdirSync(improvedIndividuDebugDir)) {
+    unlinkSync(`${improvedIndividuDebugDir}\\${files}`);
+  }
+  
+  for (const files of readdirSync(swapDebugDir)) {
+    unlinkSync(`${swapDebugDir}\\${files}`);
+  }
+
   const defaultOption: Options = {
     populationSize: options.populationSize ?? 10,
     maxIteration: options.maxIteration ?? 10,
-    qLearningInterval: options.qLearningInterval ?? 3,
+    qLearningInterval: options.qLearningInterval ?? 1,
     targetCoverage: options.targetCoverage ?? 80,
     appDir: options.appDir ?? `${__dirname}/app`,
-    testPath: options.testPath ?? `${__dirname}/app/src/tests`,
+    testPath: options.testPath ?? 'src/tests',
     skipController: options.skipController ?? [],
   };
 
@@ -1023,6 +1093,8 @@ async function generateTestCase(listControllerInfo: ControllerInfo[], mockFuncti
   let controllerPopulation = initPopulation(listControllerInfoCopy, mockFunctionArgument, defaultOption);
   
   // let generationCount = 0;
+
+  generationCount = 0;
 
   const fullfilledMemberList: FullfilledMember[] = [];
 
@@ -1126,8 +1198,6 @@ async function generateTestCase(listControllerInfo: ControllerInfo[], mockFuncti
 
   writeFileSync(`${coverageDebugDir}\\coverage.json`, JSON.stringify(coveragePerIteration, null, 2));
 
-  defaultOption.skipController = [];
-
   await writeTestCaseScenarioFile(fullfilledMemberList, listControllerInfo, defaultOption);
 }
 
@@ -1155,21 +1225,21 @@ async function writeTestCaseScenarioFile (fullfilledMemberList: FullfilledMember
   }
 }
 
-// const appDir = "D:/Stanley/Kuliah/Akademik/TA/src/Open Source Web/Test Case Generator/supply_chain_application";
-const appDir = "D:/Stanley/Kuliah/Akademik/TA/Test";
+const appDir = "D:/Stanley/Kuliah/Akademik/TA/src/Open Source Web/Test Case Generator/supply_chain_application";
+// const appDir = "D:/Stanley/Kuliah/Akademik/TA/Test";
 
-const options: Partial<Options> = {
-  populationSize: 10,
-  maxIteration: 20,
-  qLearningInterval: 1,
-  targetCoverage: 90,
-  appDir,
-  testPath: `${appDir}/src/tests`,
-  skipController: [],
-};
+// const options: Partial<Options> = {
+//   populationSize: 6,
+//   maxIteration: 10,
+//   qLearningInterval: 1,
+//   targetCoverage: 80,
+//   appDir,
+//   testPath: 'src/tests',
+//   skipController: [],
+// };
 
-const listControllerInfo = parserSourceCodeInfo(appDir);
-const mockFunctionArgument = createTestCase(listControllerInfo, appDir);
+// const listControllerInfo = parserSourceCodeInfo(appDir);
+// const mockFunctionArgument = createTestCase(listControllerInfo, options);
 
 // for (const controller of controllerInfoList) {
 //   console.log(controller.testCaseContent);
@@ -1188,82 +1258,14 @@ const qTableDebugDir = `${debugDir}\\qTable`;
 const improvedIndividuDebugDir = `${debugDir}\\improvedIndividu`;
 const swapDebugDir = `${debugDir}\\swap`;
 
-if (!existsSync(mockDebugDir)) {
-  mkdirSync(mockDebugDir, { recursive: true });
-}
 
-writeFileSync(`${mockDebugDir}\\mock.json`, JSON.stringify(mockFunctionArgument, null, 2));
-
-if (!existsSync(populationDebugDir)) {
-  mkdirSync(populationDebugDir, { recursive: true });
-}
-
-if (!existsSync(coverageDebugDir)) {
-  mkdirSync(coverageDebugDir, { recursive: true });
-}
-
-if (!existsSync(coverageInfoDebugDir)) {
-  mkdirSync(coverageInfoDebugDir, { recursive: true });
-}
-
-if (!existsSync(maxCoverageDebugDir)) {
-  mkdirSync(maxCoverageDebugDir, { recursive: true });
-}
-
-if (!existsSync(bestIndividuDebugDir)) {
-  mkdirSync(bestIndividuDebugDir, { recursive: true });
-}
-
-if (!existsSync(qTableDebugDir)) {
-  mkdirSync(qTableDebugDir, { recursive: true });
-}
-
-if (!existsSync(improvedIndividuDebugDir)) {
-  mkdirSync(improvedIndividuDebugDir, { recursive: true });
-}
-
-if (!existsSync(swapDebugDir)) {
-  mkdirSync(swapDebugDir, { recursive: true });
-}
-
-for (const files of readdirSync(coverageDebugDir)) {
-  unlinkSync(`${coverageDebugDir}\\${files}`);
-}
-
-for (const files of readdirSync(coverageInfoDebugDir)) {
-  unlinkSync(`${coverageInfoDebugDir}\\${files}`);
-}
-
-for (const files of readdirSync(maxCoverageDebugDir)) {
-  unlinkSync(`${maxCoverageDebugDir}\\${files}`);
-}
-
-for (const files of readdirSync(populationDebugDir)) {
-  unlinkSync(`${populationDebugDir}\\${files}`);
-}
-
-for (const files of readdirSync(bestIndividuDebugDir)) {
-  unlinkSync(`${bestIndividuDebugDir}\\${files}`);
-}
-
-for (const files of readdirSync(qTableDebugDir)) {
-  unlinkSync(`${qTableDebugDir}\\${files}`);
-}
-
-for (const files of readdirSync(improvedIndividuDebugDir)) {
-  unlinkSync(`${improvedIndividuDebugDir}\\${files}`);
-}
-
-for (const files of readdirSync(swapDebugDir)) {
-  unlinkSync(`${swapDebugDir}\\${files}`);
-}
 
 let generationCount = 0;
 
-generateTestCase(listControllerInfo, mockFunctionArgument, options).then(() => {
-  console.log("Done");
-}).catch((err) => {
-  console.log(err);
-});
+// generateTestCase(listControllerInfo, mockFunctionArgument, options).then(() => {
+//   console.log("Done");
+// }).catch((err) => {
+//   console.log(err);
+// });
 
 export { generateTestCase };

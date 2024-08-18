@@ -70,9 +70,9 @@ function createMockFile(controllerInfo: ControllerInfo[], appDir: string, mockPa
 }
 
 // const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\src\\Open Source Web\\Test Case Generator\\supply_chain_application";
-const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\Test";
-const controllerInfoList = parserSourceCodeInfo(appDir);
-createMockFile(controllerInfoList, appDir);
+// const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\Test";
+// const controllerInfoList = parserSourceCodeInfo(appDir);
+// createMockFile(controllerInfoList, appDir);
 
 
 

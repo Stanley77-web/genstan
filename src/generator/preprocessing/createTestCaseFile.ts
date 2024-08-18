@@ -5,7 +5,8 @@ import { createWriteStream, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { parserSourceCodeInfo } from "./parserSourceCode";
 import { trim } from "lodash";
 
-function createTestCase (listControllerInfo: ControllerInfo[], appDir: string, options: Partial<Options> = {}): MockFunctionArgument {
+function createTestCase (listControllerInfo: ControllerInfo[], options: Partial<Options> = {}): MockFunctionArgument {
+    const appDir = options.appDir || "app";
     const testPath = options.testPath || "src/tests";
     const isWrite = options.isWrite || false;
     const appTestPath = `${appDir}/${testPath}`;
@@ -303,10 +304,10 @@ function removeTestCaseScenario (controllerInfo: ControllerInfo, testPath: strin
   testCaseFileWrite.end();
 }
 
-function createTestCaseScenario (controllerInfo: ControllerInfo, writingRequest: Partial<{ check: boolean, write: boolean, testPath: string }> = {}): string {
+function createTestCaseScenario (controllerInfo: ControllerInfo, writingRequest: Partial<{ check: boolean, write: boolean, appTestPath: string }> = {}): string {
   const writeRequestCheck = writingRequest['check'] || false;
   const writeRequestWrite = writingRequest['write'] || false;
-  const testPath = writingRequest['testPath'] || "src/tests";
+  const apptestPath = writingRequest['appTestPath'] || "src/tests";
 
   let testCaseScenarioString = '';
 
@@ -315,10 +316,10 @@ function createTestCaseScenario (controllerInfo: ControllerInfo, writingRequest:
     testCaseScenarioString += `const output = {}\n\n`;
   }
 
-  const outputValue = writeRequestWrite ? require(`${testPath}/${controllerInfo.name}.output.json`) : {};
+  const outputValue = writeRequestWrite ? JSON.parse(readFileSync(`${apptestPath}/${controllerInfo.name}.output.json`, 'utf-8')) : {};
 
   if (writeRequestWrite) {
-    unlinkSync(`${testPath}/${controllerInfo.name}.output.json`);
+    unlinkSync(`${apptestPath}/${controllerInfo.name}.output.json`);
   }
 
   testCaseScenarioString +=  `describe('# ${controllerInfo.name}', () => {\n`;
@@ -342,7 +343,7 @@ function createTestCaseScenario (controllerInfo: ControllerInfo, writingRequest:
         testCaseScenarioString += `            output['${method.name}-Scenario 1'] = ret\n`;
 
         if (method === controllerInfo.methods[controllerInfo.methods.length - 1]) {
-            testCaseScenarioString += `            writeFileSync('${testPath}/${controllerInfo.name}.output.json', JSON.stringify(output, null, 2))\n`;
+            testCaseScenarioString += `            writeFileSync('${apptestPath}/${controllerInfo.name}.output.json', JSON.stringify(output, null, 2))\n`;
         }
       } else if (writeRequestWrite) {
         const value = outputValue[`${method.name}-Scenario 1`];
@@ -366,7 +367,7 @@ function createTestCaseScenario (controllerInfo: ControllerInfo, writingRequest:
           testCaseScenarioString += `            output['${method.name}-Scenario ${idx + 1}'] = ret\n`;
 
           if (method === controllerInfo.methods[controllerInfo.methods.length - 1] && idx === lenScenario - 1) {
-            testCaseScenarioString += `            writeFileSync('${testPath}/${controllerInfo.name}.output.json', JSON.stringify(output, null, 2))\n`;
+            testCaseScenarioString += `            writeFileSync('${apptestPath}/${controllerInfo.name}.output.json', JSON.stringify(output, null, 2))\n`;
           }
         } else if (writeRequestWrite) {
             const value = outputValue[`${method.name}-Scenario ${idx + 1}`];
@@ -489,22 +490,22 @@ function createTestCaseScenario (controllerInfo: ControllerInfo, writingRequest:
   }
 }
 
-function writeTestCaseFile (controllerName: string, appDir: string, testCaseContent: string, options: Partial<Options> = {}): void {
+function writeTestCaseFile (controllerName: string,  testCaseContent: string, options: Partial<Options> = {}): void {
+    const appDir = options.appDir || `${__dirname}/app`;
     const testPath = options.testPath || "src/tests";
     const appTestPath = `${appDir}/${testPath}/${controllerName}.spec.js`;
 
     writeFileSync(appTestPath, testCaseContent);
 }
 
-// const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\src\\Open Source Web\\Test Case Generator\\supply_chain_application";
+// const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\Test";
+
 // const controllerInfoList = parserSourceCodeInfo(appDir);
+
+// const debugDir = 'C:\\Users\\acer\\.vscode\\extensions\\genstan\\src\\generator\\debug';
+
 // const mockFunctionArgument = createTestCase(controllerInfoList, appDir, { isWrite: true });
-// // removeTestCaseScenario(controllerInfoList[0], `${appDir}\\src\\tests`);
 
-// for (const controllerInfo of controllerInfoList) {
-//   removeTestCaseScenario(controllerInfo, `${appDir}\\src\\tests`);
-// }
-
-// writeFileSync(`mock.json`, JSON.stringify(mockFunctionArgument, null, 2));
+// writeFileSync(`${debugDir}\\mock.json`, JSON.stringify(mockFunctionArgument, null, 2));
 
 export { createTestCase, createTestCaseScenario, removeTestCaseScenario, writeTestCaseFile };

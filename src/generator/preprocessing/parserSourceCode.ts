@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync } from 'fs';
 import {
     createSourceFile,
     ScriptTarget,
@@ -47,11 +47,12 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
             callLibs: [] as CallInfo[]
         };
 
-        // if (file !== 'ProductController.ts') {
-        //     continue;
-        // }
+        if (file !== 'AuthController.ts') {
+            continue;
+        }
     
         const involvedLibraries = [] as string[];
+        const outputList = [] as string[];
     
         const sourceCode = readFileSync(`${path}\\${file}`, 'utf-8');
         const sourceFile = createSourceFile(file, sourceCode, ScriptTarget.Latest, true, ScriptKind.TS);
@@ -62,6 +63,8 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
             importParser(statement);
             controllerParser(statement);
         }
+
+        console.log(outputList);
 
         controllersInfo.push(info);
 
@@ -256,23 +259,34 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
         }
     
         function callLibraryParse (statement: Node) {
+
             if (isVariableStatement(statement) || isExpressionStatement(statement)) {
-                
                 if (isVariableStatement(statement)) {
-                    
+
+                    // statement.getChildren().forEach((child) => {
+                    //     console.log(child.getText());
+                    //     console.log(child.kind);
+                    // });
+   
                     statement.declarationList.declarations.forEach((declaration) => {
                         const declarartionInitializer = declaration.initializer;
-    
-                        awaitParse(declarartionInitializer!!);
-                        expressionParse(declarartionInitializer!!);
+                        const output = declaration.name.getText();
+
+                        awaitParse(declarartionInitializer!!, output);
+                        expressionParse(declarartionInitializer!!, output);
                     });
                 } else {
                     // console.log(statement.getText());
                     if (isBinaryExpression(statement.expression)) {
                         const declarartionInitializer = statement.expression.right;
+                        let output = statement.expression.left.getText();
+
+                        if (output.includes('.')) {
+                            output = output.split('.').pop() as string;
+                        }
     
-                        awaitParse(declarartionInitializer);
-                        expressionParse(declarartionInitializer);
+                        awaitParse(declarartionInitializer, output);
+                        expressionParse(declarartionInitializer, output);
                     } else if (isAwaitExpression(statement.expression)) {
                         awaitParse(statement.expression);
                         expressionParse(statement.expression);
@@ -285,23 +299,23 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
             }
     
             // Parsing Await Expression (call library function)
-            function awaitParse (initializer: Expression) {
+            function awaitParse (initializer: Expression, output: string = '') {
                 if (isAwaitExpression(initializer)) {
                     if (isCallExpression(initializer.expression)) {
-                        callParse(initializer.expression, true);
+                        callParse(initializer.expression, output, true);
                     }
                 }
             }
 
-            function expressionParse (expression: Expression) {
+            function expressionParse (expression: Expression, output: string = '') {
                 if (isCallExpression(expression)) {
                     // console.log(expression.getText());
                     // console.log(expression.kind);
-                    callParse(expression);
+                    callParse(expression, output);
                 } 
             }
 
-            function callParse (expression: CallExpression, isAsync: boolean = false) {
+            function callParse (expression: CallExpression, output: string, isAsync: boolean = false) {
                 if (isCallExpression(expression)) {
                     let callExpression = expression;
 
@@ -327,6 +341,10 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
                     });
     
                     if (callLibrary && !argument) {
+                        if (output !== '') {
+                            outputList.push(output);
+                        }
+
                         const maxDepth = 5;
                         let depth = 0;
     
@@ -353,6 +371,10 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
                             isAsync
                         });
                     } else if (callLibrary && argument) {
+                        if (output !== '') {
+                            outputList.push(output);
+                        }
+
                         for (const argument of callExpression.arguments) {
                             if (isArrowFunction(argument)) {
                                 const statement = argument.body as Node;
@@ -545,11 +567,13 @@ function parserSourceCodeInfo (appDir: string, controllerPath: string = 'src/con
     return controllersInfo;
 };
 
-// const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\src\\Open Source Web\\Test Case Generator\\supply_chain_application";
-const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\Test";
+const appDir = "D:/Stanley/Kuliah/Akademik/TA/src/Open Source Web/Test Case Generator/supply_chain_application";
+// const appDir = "D:\\Stanley\\Kuliah\\Akademik\\TA\\Test";
 
 const controllerInfoList = parserSourceCodeInfo(appDir);
 
-// console.log(JSON.stringify(controllerInfoList, null, 2));
+// const debugDir = 'C:\\Users\\acer\\.vscode\\extensions\\genstan\\src\\generator\\debug';
+
+// writeFileSync(`${debugDir}\\controllerInfo.json`, JSON.stringify(controllerInfoList, null, 2));
 
 export { parserSourceCodeInfo };
